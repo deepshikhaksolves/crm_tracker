@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree view -->
+    <record id="ks_lead_technology_tree" model="ir.ui.view">
+        <field name="name">ks.lead.technology.tree</field>
+        <field name="model">ks.lead.technology</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+    <!-- Form view -->
+    <record id="ks_lead_technology_form" model="ir.ui.view">
+        <field name="name">ks.lead.technology.form</field>
+        <field name="model">ks.lead.technology</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <!-- Server action -->
+    <record id="lead_technology_act_window" model="ir.actions.act_window">
+        <field name="name">Lead Technology</field>
+        <field name="res_model">ks.lead.technology</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <!-- Menu  -->
+    <menuitem id="lead_technology_menu"
+              name="Lead Technology"
+              parent="crm.crm_menu_config"
+              action="lead_technology_act_window"
+              sequence="13"/>
+</odoo>

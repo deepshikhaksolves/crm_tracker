@@ -1,0 +1,34 @@
+.select_project .dropdown-menu {
+    padding: 0;
+    margin-top: 5px;
+    width:100%;
+}
+.select_project .dropdown-menu .project {
+    padding: 5px 10px;
+}
+.select_project button {
+    color:#fff !important;
+}
+.select_project button, .select_project button:hover, .select_project button:focus {
+    outline: none;
+    box-shadow: none;
+}
+.select_project .project a:hover span {
+    color: #3aadaa;
+}
+
+.select_project .project a:hover {
+    text-decoration: none;
+    color: #3aadaa;
+}
+.select_project button#project_filters {
+    text-align: left;
+    border: none !important;
+
+}
+.o_portal_docs >h3:first-child {
+    background-color: #3aadaa !important;
+}
+.select_project button span.fa.fa-caret-down.mr10 {
+    float: right !important;
+}

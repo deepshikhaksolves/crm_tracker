@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id='ks_res_config_form' model="ir.ui.view">
+        <field name="name">ks.res.config.form</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="crm.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@data-key='crm']/div[2]" position="after">
+                <h2> Ksolves CRM</h2>
+                <div class="row mt16 o_settings_container">
+                    <div class="col-xs-12 col-md-12 o_setting_box" id="ks_crm_lead">
+                        <group colspan="2" col="1">
+                            <field name="lead_lost_mail_receiver"/>
+                        </group>
+                        <div class="text-muted">
+                            Add email 'To' recipient for receiving mail on losing a lead.
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

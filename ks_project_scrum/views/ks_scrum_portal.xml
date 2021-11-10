@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="ks_portal_my_home" inherit_id="project.portal_my_home" priority="18">
+            <xpath expr="//t[@t-if='not project']" position="replace">
+                <t t-if="not project">
+                    <t t-if="project_filters.get(project, {}).get('label') or projects">
+
+                        <button id="project_filters" class="w-100" type="button" data-toggle="dropdown"
+                                style="background: transparent; border: none; padding-left: 0; padding-right: 0; color: #63cdf4;">
+                            <span style="padding-left: 0;color:white;">Projectttt:</span>
+                            <span class="fa fa-caret-down mr10"/>
+                            <span t-esc="project_filters.get(project, {}).get('label', projects[0].name)"/>
+                            <span class="caret"></span>
+                        </button>
+                    </t>
+                </t>
+            </xpath>
+            <xpath expr="//t[@t-if='project']" position="replace">
+            <t t-if="project">
+                    <t t-if="project">
+                        <!-- <t t-set="project" t-value="project_dashbord" /> -->
+                        <button id="project_filters" class="w-100" type="button" data-toggle="dropdown"
+                                style="background: transparent; border: none; padding-left: 0; padding-right: 0; color: #fff;border: #fff 1px solid;border-radius: 4px;padding: 3px;">
+                            <span style="padding-left: 0;color:white;">Projectsss:</span>
+                            <span class="fa fa-caret-down mr10"/>
+                            <span t-esc="project_filters.get(project_dashbord, {}).get('label', project_dashbord.name)"/>
+                            <span class="caret"></span>
+                        </button>
+                    </t>
+                </t>
+            </xpath>
+            <xpath expr="//div[hasclass('o_portal_docs')]/h3[1]" position="attributes">
+                <attribute name="style">background-color: #6880b0;</attribute>
+            </xpath>
+        </template>
+    </data>
+</odoo>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree view -->
+    <record id="ks_lead_source_tree" model="ir.ui.view">
+        <field name="name">ks.lead.source.tree</field>
+        <field name="model">ks.lead.source</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+    <!-- Form view -->
+    <record id="ks_lead_source_form" model="ir.ui.view">
+        <field name="name">ks.lead.source.form</field>
+        <field name="model">ks.lead.source</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <!-- Server action -->
+    <record id="lead_source_act_window" model="ir.actions.act_window">
+        <field name="name">Lead Source</field>
+        <field name="res_model">ks.lead.source</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <!-- Menu  -->
+    <menuitem id="lead_source_menu"
+              name="Lead Source"
+              parent="crm.crm_menu_config"
+              action="lead_source_act_window"
+              sequence="12"/>
+</odoo>

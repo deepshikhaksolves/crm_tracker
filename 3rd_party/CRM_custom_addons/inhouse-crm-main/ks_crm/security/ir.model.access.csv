@@ -1,0 +1,20 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+
+access_ks_lead_source_salesman,ks_lead_source salesman,model_ks_lead_source,sales_team.group_sale_salesman,1,0,0,0
+access_ks_lead_source_manager,ks_lead_source manager,model_ks_lead_source,sales_team.group_sale_manager,1,1,1,1
+
+access_ks_lead_technology_salesman,ks_lead_technology salesman,model_ks_lead_technology,sales_team.group_sale_salesman,1,0,0,0
+access_ks_lead_technology_manager,ks_lead_technology manager,model_ks_lead_technology,sales_team.group_sale_manager,1,1,1,1
+
+access_ks_lead_type_salesman,ks_lead_type salesman,model_ks_lead_type,sales_team.group_sale_salesman,1,0,0,0
+access_ks_lead_type_manager,ks_lead_type manager,model_ks_lead_type,sales_team.group_sale_manager,1,1,1,1
+
+crm.access_crm_tag_salesman,crm_tag salesman,sales_team.model_crm_tag,sales_team.group_sale_salesman,1,0,0,0
+
+access_crm_lead_delete,crm.lead,model_crm_lead,sales_team.group_sale_salesman,1,1,1,1
+
+
+access_mail_mail_system,mail.mail.system,mail.model_mail_mail,base.group_system,1,0,0,0
+access_outgoing_mail_system,mail.mail.system,mail.model_mail_mail,sales_team.group_sale_salesman,1,1,1,1
+
+

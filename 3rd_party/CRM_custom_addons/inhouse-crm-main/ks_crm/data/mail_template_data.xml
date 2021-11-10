@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<odoo>
+    <data>
+        <!--    Lost lead mail template-->
+        <record id="ks_lost_lead_mail_template" model="mail.template">
+            <field name="name">Lost lead mail template</field>
+            <field name="model_id" ref="ks_crm.model_crm_lead"/>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html"><![CDATA[
+            <p>Hi Team,</p>
+            <p>The lead/opportunity [${object.code}-${object.name}] has been marked as lost by: ${user.name |safe}, due
+            to: " ${object.lost_reason.name} ".</p>
+            <p style="margin-top: 24px; margin-bottom: 16px;">
+                <a href="${object.get_access_link()}"style="background-color:#875A7B; padding: 10px;
+                text-decoration: none; color: #fff; border-radius: 5px;">
+                    View Lead/Opportunity
+                </a>
+            </p>
+            <br/>
+            Thanks and Regards,
+            <br/>
+            Sales Team
+            ]]>
+            </field>
+        </record>
+    </data>
+</odoo>

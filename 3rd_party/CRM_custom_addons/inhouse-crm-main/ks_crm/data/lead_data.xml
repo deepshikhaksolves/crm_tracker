@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Lead Source-->
+
+        <record id="ks_lead_source_twak" model="ks.lead.source">
+            <field name="name">Tawk</field>
+        </record>
+        <record id="ks_lead_source_email" model="ks.lead.source">
+            <field name="name">Email</field>
+        </record>
+        <record id="ks_lead_source_linked" model="ks.lead.source">
+            <field name="name">LinkedIn</field>
+        </record>
+        <record id="ks_lead_source_other" model="ks.lead.source">
+            <field name="name">Other</field>
+        </record>
+
+        <!-- Lead Type -->
+
+        <record id="ks_lead_type_app" model="ks.lead.type">
+            <field name="name">App</field>
+        </record>
+
+        <record id="ks_lead_type_service" model="ks.lead.type">
+            <field name="name">Service</field>
+        </record>
+
+        <record id="ks_lead_type_customization" model="ks.lead.type">
+            <field name="name">Customization</field>
+        </record>
+
+        <record id="ks_lead_type_bug" model="ks.lead.type">
+            <field name="name">Bug</field>
+        </record>
+
+        <!-- Lead Technology  -->
+
+        <record id="ks_lead_technology_odoo" model="ks.lead.technology">
+            <field name="name">Odoo</field>
+        </record>
+
+        <record id="ks_lead_technology_magento" model="ks.lead.technology">
+            <field name="name">Magento</field>
+        </record>
+
+        <record id="ks_lead_technology_others" model="ks.lead.technology">
+            <field name="name">Others</field>
+        </record>
+
+    </data>
+</odoo>

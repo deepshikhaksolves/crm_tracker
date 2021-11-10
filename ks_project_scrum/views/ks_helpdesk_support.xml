@@ -1,0 +1,10 @@
+<odoo>
+    <data>
+        <record id="support_page_add" model="website.menu">
+            <field name="name">Create Ticket</field>
+            <field name="url">/helpdesk_support_ticket</field>
+            <field name="parent_id" ref="website.main_menu"/>
+            <field name="sequence" type="int">59</field>
+        </record>
+    </data>
+</odoo>
