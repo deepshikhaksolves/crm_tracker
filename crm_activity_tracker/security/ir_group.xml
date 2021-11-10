@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record model="res.groups" id="crm_due_days_manager">
+            <field name="name">CRM Activity Manager</field>
+        </record>
+    </data>
+</odoo>

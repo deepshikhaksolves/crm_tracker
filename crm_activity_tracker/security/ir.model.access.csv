@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_erp_crm_activity_summary,erp.crm.activity.summary,model_erp_crm_activity_summary,,1,1,1,1
+access_erp_escalation_matrix,erp.escalation.matrix,model_erp_escalation_matrix,,1,1,1,1
+access_escalation_matrix_hr_employee,escalation.matrix.hr.employee,model_escalation_matrix_hr_employee,,1,1,1,1

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="mail_crm_schedule_activity" model="mail.template">
+            <field name="name">Crm Schedule Activity</field>
+            <field name="model_id" ref="crm_activity_tracker.model_mail_activity"/>
+            <field name="auto_delete" eval="False"/>
+            <field name="subject">Scheduled Activity Due Date Over.</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px;">
+                    <p>
+                        <p>${object.activity_type_id.name} is still not closed for the lead ${object.res_name}</p>
+                        <p>It's due date is over which is ${object.date_deadline}.</p>
+                        <p>Thanks,</p>
+                    </p>
+                </div>
+            </field>
+        </record>
+    </data>
+</odoo>

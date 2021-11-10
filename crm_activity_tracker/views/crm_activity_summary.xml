@@ -1,0 +1,31 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+
+    <record model="ir.ui.view" id="crm_activity_tracker.list_view">
+      <field name="name">Activity Summary List</field>
+      <field name="model">erp.crm.activity.summary</field>
+      <field name="arch" type="xml">
+        <tree editable="bottom">
+          <field name="sequence" widget="handle"/>
+          <field name="activity_summary"/>
+          <field name="due_date_days"/>
+        </tree>
+      </field>
+    </record>
+
+
+    <!-- actions opening views on models -->
+
+    <record model="ir.actions.act_window" id="crm_activity_tracker.action_activity_tracker">
+      <field name="name">Activity Summary</field>
+      <field name="res_model">erp.crm.activity.summary</field>
+      <field name="view_mode">tree</field>
+    </record>
+
+
+    <!-- Top menu item -->
+
+    <menuitem name="Activity Summary" id="crm_activity_tracker.menu_activity_summary" action="crm_activity_tracker.action_activity_tracker"/>
+  </data>
+</odoo>

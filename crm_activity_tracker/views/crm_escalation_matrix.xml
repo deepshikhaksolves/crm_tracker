@@ -1,0 +1,128 @@
+<odoo>
+    <data>
+        <!-- customised form view of mail.activity definition -->
+        <record id="erp_mail_activity_view_form_popup" model="ir.ui.view">
+            <field name="name">erp.mail.activity.form.inherit.form</field>
+            <field name="model">mail.activity</field>
+            <field name="inherit_id" ref="mail.mail_activity_view_form_popup"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='summary']" position="after">
+                    <field name="mail_reminder_day" attrs="{'invisible': [('is_crm_lead', '=', False)]}"
+                           groups="crm_activity_tracker.crm_due_days_manager"/>
+                </xpath>
+                <xpath expr="//field[@name='user_id']" position="after">
+                    <field name="is_crm_lead" invisible="1"/>
+                    <field name="next_mail_due_date" attrs="{'invisible': [('is_crm_lead', '=', False)]}" readonly="1"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="crm_activity_tracker.mail_activity_type_view_form" model="ir.ui.view">
+            <field name="name">mail.activity.form</field>
+            <field name="model">mail.activity.type</field>
+            <field name="inherit_id" ref="mail.mail_activity_type_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='res_model_id']" position="after">
+                    <field name="model" invisible="1"/>
+                    <field name="escalation_matrix_id" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
+                    <field name="is_erp_activity" widget="radio" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- customised form view of crm.lead definition -->
+
+        <record model="ir.ui.view" id="lead_score_form">
+            <field name="name">erp.crm.lead.form.inherit</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='team_id']" position="after">
+                    <field name="type_of_matrix" attrs="{'required': [('user_id', '!=', False)]}"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- explicit form view definition -->
+
+        <record model="ir.ui.view" id="crm_activity_tracker.erp_matrix_form_view">
+            <field name="name">Escalation Matrix Form</field>
+            <field name="model">erp.escalation.matrix</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="escalation_matrix_number" readonly="1"/>
+                                <field name="manager_id"/>
+                            </group>
+                            <group>
+                                <field name="type_of_matrix" required="1"/>
+                            </group>
+                            <field name="managers_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="salesperson_id"/>
+                                    <field name="salesperson_manager"/>
+                                    <field name="work_email"/>
+                                    <field name="serial_no"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="salesperson_id"/>
+                                            <field name="salesperson_manager"/>
+                                            <field name="work_email"/>
+                                        </group>
+                                    </group>
+                                </form>
+                            </field>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- explicit list view definition -->
+
+        <record model="ir.ui.view" id="crm_activity_tracker.erp_matrix_list_view">
+            <field name="name">Escalation Matrix List</field>
+            <field name="model">erp.escalation.matrix</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="escalation_matrix_number"/>
+                    <field name="manager_id"/>
+                    <field name="type_of_matrix"/>
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="erp_crm_team_salesteams_view_form" model="ir.ui.view">
+            <field name="name">crm.team.form</field>
+            <field name="model">crm.team</field>
+            <field name="inherit_id" ref="sales_team.crm_team_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='user_id']" position="after">
+                    <field name="activity_id" widget="many2many_tags"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- actions opening views on models -->
+
+        <record model="ir.actions.act_window" id="crm_activity_tracker.action_escalation_matrix">
+            <field name="name">Escalation Matrix</field>
+            <field name="res_model">erp.escalation.matrix</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+
+        <!-- Top menu item -->
+
+        <menuitem name="Escalation Matrix" id="crm_activity_tracker.menu_escalation_matrix"
+                  parent="crm.crm_menu_config"
+                  action="crm_activity_tracker.action_escalation_matrix"/>
+
+    </data>
+</odoo>
