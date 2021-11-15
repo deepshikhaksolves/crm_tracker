@@ -25,7 +25,8 @@
                 <xpath expr="//field[@name='res_model_id']" position="after">
                     <field name="model" invisible="1"/>
                     <field name="escalation_matrix_id" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
-                    <field name="is_erp_activity" widget="radio" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
+                    <field name="is_erp_activity" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
+                    <field name="next_sequence" />
                 </xpath>
             </field>
         </record>
@@ -38,7 +39,7 @@
             <field name="inherit_id" ref="crm.crm_lead_view_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='team_id']" position="after">
-                    <field name="type_of_matrix" attrs="{'required': [('user_id', '!=', False)]}"/>
+                    <field name="type_of_matrix" invisible="1"/>
                 </xpath>
             </field>
         </record>
