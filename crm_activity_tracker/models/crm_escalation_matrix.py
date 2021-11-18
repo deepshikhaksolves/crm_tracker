@@ -9,7 +9,7 @@ _logger = logging.getLogger(__name__)
 class ErpEscalationMatrix(models.Model):
     _name = 'erp.escalation.matrix'
     _description = "It holds the information for the Managers Hierarchy"
-    _rec_name = 'escalation_matrix_number'
+    # _rec_name = 'escalation_matrix_number'
 
     escalation_matrix_number = fields.Char("Escalation Matrix", default="New")
     manager_id = fields.Many2one('hr.employee', string='Lead Manager')
@@ -18,6 +18,14 @@ class ErpEscalationMatrix(models.Model):
         ('products', 'Products')], 'Matrix Type')
     managers_ids = fields.One2many(
         'escalation.matrix.hr.employee', 'escalation_matrix_id')
+    name = fields.Char(string='Name')
+
+    def name_get(self):
+        result = []
+        for matrix in self:
+            name = matrix.escalation_matrix_number + ' ' + matrix.name
+            result.append((matrix.id, name))
+        return result
 
     @api.model
     def create(self, vals):
@@ -52,7 +60,7 @@ class ErpEscalationEmployee(models.Model):
 
     def compute_serial_no(self):
         for rec in self:
-            rec.serial_no = rec.sequence + 1
+            rec.serial_no = rec.sequence * 10
 
 
 
