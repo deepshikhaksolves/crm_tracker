@@ -6,7 +6,7 @@
             <field name="name">crm.timing.form</field>
             <field name="model">crm.timing</field>
             <field name="arch" type="xml">
-                <form string="Timings">
+                <form string="Timings" create="false">
                     <sheet>
                         <div class="oe_title" style="width: 47%%">
                             <h1>
@@ -29,7 +29,7 @@
             <field name="name">crm.timing.tree</field>
             <field name="model">crm.timing</field>
             <field name="arch" type="xml">
-                <tree string="Timings">
+                <tree string="Timings" create="false">
                     <field name="name"/>
                     <field name="login_time" widget="float_time"/>
                     <field name="logout_time" widget="float_time"/>
