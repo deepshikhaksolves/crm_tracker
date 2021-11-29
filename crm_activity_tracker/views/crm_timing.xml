@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="crm_timing_form_view" model="ir.ui.view">
+            <field name="name">crm.timing.form</field>
+            <field name="model">crm.timing</field>
+            <field name="arch" type="xml">
+                <form string="Timings">
+                    <sheet>
+                        <div class="oe_title" style="width: 47%%">
+                            <h1>
+                                <field name="name" placeholder="Name" readonly="1"/>
+                            </h1>
+                        </div>
+                        <group col="4" colspan="4">
+                            <field name="login_time" widget="float_time"/>
+                            <field name="logout_time" widget="float_time"/>
+                        </group>
+                        <p style="color: red;">
+                            <b>*Note- Please use 24 Hour format for timings</b>
+                        </p>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="crm_timing_tree_view" model="ir.ui.view">
+            <field name="name">crm.timing.tree</field>
+            <field name="model">crm.timing</field>
+            <field name="arch" type="xml">
+                <tree string="Timings">
+                    <field name="name"/>
+                    <field name="login_time" widget="float_time"/>
+                    <field name="logout_time" widget="float_time"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="crm_timing_act_window" model="ir.actions.act_window">
+            <field name="name">Timings</field>
+            <field name="res_model">crm.timing</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem name="Timings" id="crm_timing_menu" parent="crm.crm_menu_config" action="crm_timing_act_window"/>
+
+    </data>
+</odoo>

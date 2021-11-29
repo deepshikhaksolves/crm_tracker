@@ -1,6 +1,8 @@
-from odoo import models, fields, api, _
-from datetime import date
+from odoo import models, fields, api, exceptions, _
 from dateutil.relativedelta import relativedelta
+from datetime import date, datetime, timedelta
+import time
+import pytz
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -13,12 +15,11 @@ class ErpEscalationMatrix(models.Model):
 
     escalation_matrix_number = fields.Char("Escalation Matrix", default="New")
     manager_id = fields.Many2one('hr.employee', string='Lead Manager')
-    type_of_matrix = fields.Selection([
-        ('services', 'Services'),
-        ('products', 'Products')], 'Matrix Type')
+    type_of_matrix = fields.Many2one('crm.team', string='Sales Team')
     managers_ids = fields.One2many(
         'escalation.matrix.hr.employee', 'escalation_matrix_id')
     name = fields.Char(string='Name')
+    assignment_reminder = fields.Boolean('Lead Assignment Reminder')
 
     def name_get(self):
         result = []
@@ -57,19 +58,19 @@ class ErpEscalationEmployee(models.Model):
     salesperson_manager = fields.Many2one('hr.employee', related='salesperson_id.parent_id', string="Parent "
                                                                                                     "Manager")
     work_email = fields.Char('Email', related='salesperson_id.work_email')
+    reminder_time = fields.Integer("Reminder Hour")
 
     def compute_serial_no(self):
         for rec in self:
             rec.serial_no = rec.sequence * 10
 
 
-
 class ErpEscalationCrm(models.Model):
     _inherit = 'crm.lead'
 
-    type_of_matrix = fields.Selection([
-        ('services', 'Services'),
-        ('products', 'Products')], 'Matrix Type')
+    # type_of_matrix = fields.Selection([
+    #     ('services', 'Services'),
+    #     ('products', 'Products')], 'Matrix Type')
     next_activity_sequence = fields.Integer('Next Activity Sequence')
     activity_sequence_flag = fields.Boolean(string="Activity Flag")
 
@@ -88,7 +89,7 @@ class ErpEscalationCrm(models.Model):
             # creating the schedule activity according the activity summary
             sale_id = self.env['crm.team'].browse(vals_list[0].get('team_id'))
             for activity in sale_id.activity_id:
-                self.env['mail.activity'].create({
+                activity_id = self.env['mail.activity'].create({
                     # 'summary': activity_summary[0].activity_summary,
                     # 'date_deadline': date.today() + relativedelta(days=activity_summary[0].due_date_days),
                     'activity_type_id': activity.id,
@@ -100,6 +101,7 @@ class ErpEscalationCrm(models.Model):
                     'is_crm_lead': True,
                     'next_mail_manager_sequence': activity.next_sequence,
                 })
+                self.get_datedeadline_from_timing(activity_id, activity)
         return res_id
 
     def write(self, vals):
@@ -114,7 +116,7 @@ class ErpEscalationCrm(models.Model):
             #     vals.update({'next_activity_sequence': activity_summary[1].sequence})
             sale_id = self.env['crm.team'].browse(vals.get('team_id'))
             for activity in sale_id.activity_id:
-                self.env['mail.activity'].create({
+                activity_id = self.env['mail.activity'].create({
                     'activity_type_id': activity.id,
                     'res_model_id': self.env['ir.model'].search([('model', '=', 'crm.lead')], limit=1).id,
                     'res_id': self.id,
@@ -124,7 +126,8 @@ class ErpEscalationCrm(models.Model):
                     'mail_reminder_day': activity.delay_count,
                     'next_mail_manager_sequence': activity.next_sequence,
                 })
-        elif 'user_id' in vals or 'team_id'  in vals:
+                self.get_datedeadline_from_timing(activity_id, activity)
+        elif 'user_id' in vals or 'team_id' in vals:
             if 'user_id' in vals:
                 auto_activity_ids = [i.id for i in self.team_id.activity_id]
                 for activity in self.activity_ids:
@@ -137,7 +140,7 @@ class ErpEscalationCrm(models.Model):
                     for activity_id in auto_activity_ids:
                         activity = self.env['mail.activity.type'].browse(
                             activity_id)
-                        self.env['mail.activity'].create({
+                        activity_id = self.env['mail.activity'].create({
                             'activity_type_id': activity.id,
                             'res_model_id': self.env['ir.model'].search([('model', '=', 'crm.lead')], limit=1).id,
                             'res_id': self.id,
@@ -147,10 +150,11 @@ class ErpEscalationCrm(models.Model):
                             'mail_reminder_day': activity.delay_count,
                             'next_mail_manager_sequence': activity.next_sequence,
                         })
+                        self.get_datedeadline_from_timing(activity_id, activity)
             else:
                 sale_id = self.env['crm.team'].browse(vals.get('team_id'))
                 for activity in sale_id.activity_id:
-                    self.env['mail.activity'].create({
+                    activity_id = self.env['mail.activity'].create({
                         'activity_type_id': activity.id,
                         'res_model_id': self.env['ir.model'].search([('model', '=', 'crm.lead')], limit=1).id,
                         'res_id': self.id,
@@ -160,7 +164,7 @@ class ErpEscalationCrm(models.Model):
                         'mail_reminder_day': activity.delay_count,
                         'next_mail_manager_sequence': activity.next_sequence,
                     })
-
+                    self.get_datedeadline_from_timing(activity_id, activity)
 
         return super(ErpEscalationCrm, self).write(vals)
 
@@ -168,15 +172,25 @@ class ErpEscalationCrm(models.Model):
 class ErpScheduleActivity(models.Model):
     _inherit = 'mail.activity'
 
+    date_deadline = fields.Datetime('Due Date', index=True, required=True, default=fields.Datetime.now())
     next_activity_sequence = fields.Integer('Next Activity Sequence')
-    mail_reminder_day = fields.Integer('Mail Reminder Day', default=2)
+    mail_reminder_hour = fields.Integer('Mail Reminder Hour', default=1)
     is_erp_activity = fields.Boolean('Erp Activity')
-    next_mail_due_date = fields.Date(
+    next_mail_due_date = fields.Datetime(
         string='Next mail Remainder Date', compute='compute_next_mail_due_date')
-    is_crm_lead = fields.Boolean(
-        "Is Crm Lead")
+    is_crm_lead = fields.Boolean("Is Crm Lead")
     is_mail_triggered = fields.Boolean("Mail Triggered")
     next_mail_manager_sequence = fields.Integer("Next Manager Mail Sequence")
+    is_lead_assignment = fields.Boolean("Is Lead Assignment")
+
+    def _calculate_date_deadline(self, activity_type):
+        # Date.context_today is correct because date_deadline is a Date and is meant to be
+        # expressed in user TZ
+        base = datetime.now(pytz.timezone('UTC'))
+        if activity_type.delay_from == 'previous_activity' and 'activity_previous_deadline' in self.env.context:
+            base = fields.Date.from_string(self.env.context.get('activity_previous_deadline'))
+        base += relativedelta(**{activity_type.delay_unit: activity_type.delay_count})
+        return datetime.strftime(base, "%Y-%m-%d %H:%M:%S")
 
     @api.onchange('mail_reminder_day', 'date_deadline')
     def compute_next_mail_due_date(self):
@@ -184,7 +198,7 @@ class ErpScheduleActivity(models.Model):
             if rec.res_model == 'crm.lead' and rec.date_deadline:
                 rec.is_crm_lead = True
                 rec.next_mail_due_date = rec.date_deadline + \
-                    relativedelta(days=rec.mail_reminder_day)
+                                         relativedelta(hours=rec.mail_reminder_hour)
 
     # def _action_done(self, feedback=False, attachment_ids=None):
     #     if self.res_model == 'crm.lead':
@@ -236,68 +250,160 @@ class ErpScheduleActivity(models.Model):
             'crm_activity_tracker.mail_crm_schedule_activity')
         if crm_mail_template_id:
             activities = self.env['mail.activity'].search(
-                [('is_erp_activity', '=', True), ('res_model', '=', 'crm.lead'),
-                 ('next_mail_due_date', '=', fields.Datetime.to_string((date.today())))])
+                [('is_erp_activity', '=', True), ('res_model', '=', 'crm.lead')])
             user_id = None
+            utc_now = datetime.utcnow().replace(second=00, microsecond=00)
             for rec in activities:
-                values = crm_mail_template_id.generate_email(rec.id, ['subject', 'body_html', 'email_from', 'email_to',
+                if rec.next_mail_due_date.date() == datetime.today().date() and rec.next_mail_due_date < datetime.utcnow():
+                    if rec.is_lead_assignment:
+                        values = crm_mail_template_id.generate_email(rec.id,
+                                                                     ['subject', 'body_html', 'email_from', 'email_to',
                                                                       'partner_to', 'email_cc', 'reply_to',
                                                                       'scheduled_date'])
-                crm_obj = rec.env['crm.lead'].browse(rec.res_id)
-                escalation_matrix = rec.activity_type_id.escalation_matrix_id
+                        crm_obj = rec.env['crm.lead'].browse(rec.res_id)
+                        escalation_matrix_ids = self.env['erp.escalation.matrix'].search(
+                            [('assignment_reminder', '=', True)])
+                        for escalation_matrix in escalation_matrix_ids:
+                            if escalation_matrix:
+                                if not rec.is_mail_triggered:
+                                    salespersons_ids = escalation_matrix.managers_ids.sorted(
+                                        'serial_no', reverse=True)
+                                    if salespersons_ids:
+                                        user_id = salespersons_ids[0].salesperson_id
+                                        values['email_to'] = user_id.work_email
+                                        if len(salespersons_ids) > 1:
+                                            rec.next_mail_manager_sequence = salespersons_ids[1].serial_no
+                                            rec.mail_reminder_hour = salespersons_ids[1].reminder_time
+                                    else:
+                                        _logger.error(
+                                            "No Salesperson is defined in escalation matrix" + str(
+                                                crm_obj.type_of_matrix))
+                                else:
+                                    manager_ids = escalation_matrix.managers_ids.filtered(
+                                        lambda manager_id: manager_id.serial_no >= rec.next_mail_manager_sequence)
+                                    if manager_ids:
+                                        emails = set(
+                                            manger_id.work_email for manger_id in manager_ids)
+                                        values['email_to'] = ','.join(emails)
+                                        next_sequence_manager_ids = escalation_matrix.managers_ids.filtered(
+                                            lambda manager_id: manager_id.serial_no < rec.next_mail_manager_sequence)
+                                        sorted_manager = next_sequence_manager_ids.sorted(
+                                            'serial_no', reverse=True)
+                                        if sorted_manager:
+                                            rec.next_mail_manager_sequence = sorted_manager[0].serial_no
+                                            rec.mail_reminder_hour = sorted_manager[0].reminder_time
 
-                if escalation_matrix:
-                    if not rec.is_mail_triggered:
-                        salespersons_ids = escalation_matrix.managers_ids.sorted(
-                            'serial_no', reverse=True)
-                        if salespersons_ids:
-                            user_id = salespersons_ids[0].salesperson_id
-                            values['email_to'] = user_id.work_email
-                            if len(salespersons_ids) > 1:
-                                rec.next_mail_manager_sequence = salespersons_ids[1].serial_no
+                            else:
+                                _logger.error(
+                                    "No escalation matrix is defined for " + str(crm_obj.type_of_matrix))
+
+                            values['email_from'] = "odoobot@example.com"
+                            values['body_html'] = values['body_html']
+                            mail = self.env['mail.mail'].create(values)
+                            mail.send()
+                            if not rec.is_mail_triggered:
+                                rec.is_mail_triggered = True
+                    else:
+                        values = crm_mail_template_id.generate_email(rec.id,
+                                                                     ['subject', 'body_html', 'email_from', 'email_to',
+                                                                      'partner_to', 'email_cc', 'reply_to',
+                                                                      'scheduled_date'])
+                        crm_obj = rec.env['crm.lead'].browse(rec.res_id)
+                        escalation_matrix = rec.activity_type_id.escalation_matrix_id
+
+                        if escalation_matrix:
+                            if not rec.is_mail_triggered:
+                                salespersons_ids = escalation_matrix.managers_ids.sorted(
+                                    'serial_no', reverse=True)
+                                if salespersons_ids:
+                                    user_id = salespersons_ids[0].salesperson_id
+                                    values['email_to'] = user_id.work_email
+                                    if len(salespersons_ids) > 1:
+                                        rec.next_mail_manager_sequence = salespersons_ids[1].serial_no
+                                        rec.mail_reminder_hour = salespersons_ids[1].reminder_time
+                                else:
+                                    _logger.error(
+                                        "No Salesperson is defined in escalation matrix" + str(crm_obj.type_of_matrix))
+                            else:
+                                manager_ids = escalation_matrix.managers_ids.filtered(
+                                    lambda manager_id: manager_id.serial_no >= rec.next_mail_manager_sequence)
+                                if manager_ids:
+                                    emails = set(
+                                        manger_id.work_email for manger_id in manager_ids)
+                                    values['email_to'] = ','.join(emails)
+                                    next_sequence_manager_ids = escalation_matrix.managers_ids.filtered(
+                                        lambda manager_id: manager_id.serial_no < rec.next_mail_manager_sequence)
+                                    sorted_manager = next_sequence_manager_ids.sorted(
+                                        'serial_no', reverse=True)
+                                    if sorted_manager:
+                                        rec.next_mail_manager_sequence = sorted_manager[0].serial_no
+                                        rec.mail_reminder_hour = sorted_manager[0].reminder_time
+
                         else:
                             _logger.error(
-                                "No Salesperson is defined in escalation matrix" + str(crm_obj.type_of_matrix))
-                    else:
-                        manager_ids = escalation_matrix.managers_ids.filtered(
-                            lambda manager_id: manager_id.serial_no >= rec.next_mail_manager_sequence)
-                        if manager_ids:
-                            emails = set(
-                                manger_id.work_email for manger_id in manager_ids)
-                            values['email_to'] = ','.join(emails)
-                            next_sequence_manager_ids = escalation_matrix.managers_ids.filtered(
-                                lambda manager_id: manager_id.serial_no < rec.next_mail_manager_sequence)
-                            sorted_manager = next_sequence_manager_ids.sorted(
-                                'serial_no', reverse=True)
-                            if sorted_manager:
-                                rec.next_mail_manager_sequence = sorted_manager[0].serial_no
+                                "No escalation matrix is defined for " + str(crm_obj.type_of_matrix))
 
+                        values['email_from'] = "odoobot@example.com"
+                        values['body_html'] = values['body_html']
+                        mail = self.env['mail.mail'].create(values)
+                        mail.send()
+                        if not rec.is_mail_triggered:
+                            rec.is_mail_triggered = True
+
+    @api.model
+    def create(self, values):
+        activity = super(models.Model, self).create(values)
+        need_sudo = False
+        try:  # in multicompany, reading the partner might break
+            partner_id = activity.user_id.partner_id.id
+        except exceptions.AccessError:
+            need_sudo = True
+            partner_id = activity.user_id.sudo().partner_id.id
+
+        # send a notification to assigned user; in case of manually done activity also check
+        # target has rights on document otherwise we prevent its creation. Automated activities
+        # are checked since they are integrated into business flows that should not crash.
+        if activity.user_id != self.env.user:
+            if not activity.automated:
+                activity._check_access_assignation()
+            if not self.env.context.get('mail_activity_quick_update', False):
+                if need_sudo:
+                    activity.sudo().action_notify()
                 else:
-                    _logger.error(
-                        "No escalation matrix is defined for " + str(crm_obj.type_of_matrix))
+                    activity.action_notify()
 
-                values['email_from'] = "odoobot@example.com"
-                values['body_html'] = values['body_html']
-                mail = self.env['mail.mail'].create(values)
-                mail.send()
-                if not rec.is_mail_triggered:
-                    rec.is_mail_triggered = True
+        self.env[activity.res_model].browse(activity.res_id).message_subscribe(partner_ids=[partner_id])
+        if activity.date_deadline.date() <= datetime.now().date():
+            self.env['bus.bus'].sendone(
+                (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
+                {'type': 'activity_updated', 'activity_created': True})
+        return activity
 
 
 class ErpActivityType(models.Model):
     _inherit = 'mail.activity.type'
 
+    delay_unit = fields.Selection([
+        ('hours', 'hours'),
+        ('days', 'days'),
+        ('weeks', 'weeks'),
+        ('months', 'months')], string="Delay units", help="Unit of delay", required=True, default='days')
+    type_of_matrix = fields.Many2one('crm.team', string='Sales Team')
     escalation_matrix_id = fields.Many2one(
-        'erp.escalation.matrix', string="Escalation Matrix")
+        'erp.escalation.matrix', string="Escalation Matrix", domain="[('type_of_matrix', '=', type_of_matrix)]")
     model = fields.Char('Model', related='res_model_id.model')
     is_erp_activity = fields.Boolean('Is Erp activity')
     next_sequence = fields.Integer(string='Next Sequence')
+    assignment_reminder = fields.Boolean('Lead Assignment Reminder')
+    responsible_person_id = fields.Many2one('res.users', string='Responsible Person')
 
     @api.onchange('escalation_matrix_id')
     def _onchange_escalation_matrix_id(self):
         for rec in self:
-            if rec.escalation_matrix_id: 
-                rec.next_sequence = len(rec.escalation_matrix_id.managers_ids) if rec.escalation_matrix_id.managers_ids else 0
+            if rec.escalation_matrix_id:
+                rec.next_sequence = len(
+                    rec.escalation_matrix_id.managers_ids) if rec.escalation_matrix_id.managers_ids else 0
+
 
 class ErpCrmTeam(models.Model):
     _inherit = 'crm.team'

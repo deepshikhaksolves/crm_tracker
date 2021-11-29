@@ -7,11 +7,12 @@
             <field name="inherit_id" ref="mail.mail_activity_view_form_popup"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='summary']" position="after">
-                    <field name="mail_reminder_day" attrs="{'invisible': [('is_crm_lead', '=', False)]}"
+                    <field name="mail_reminder_hour" attrs="{'invisible': [('is_crm_lead', '=', False)]}"
                            groups="crm_activity_tracker.crm_due_days_manager"/>
                 </xpath>
                 <xpath expr="//field[@name='user_id']" position="after">
                     <field name="is_crm_lead" invisible="1"/>
+                    <field name="is_lead_assignment" invisible="1"/>
                     <field name="next_mail_due_date" attrs="{'invisible': [('is_crm_lead', '=', False)]}" readonly="1"/>
                 </xpath>
             </field>
@@ -22,8 +23,14 @@
             <field name="model">mail.activity.type</field>
             <field name="inherit_id" ref="mail.mail_activity_type_view_form"/>
             <field name="arch" type="xml">
+
+                <xpath expr="//field[@name='category']" position="before">
+                    <field name="assignment_reminder" />
+                    <field name="responsible_person_id" attrs="{'required': [('assignment_reminder','=', True)]}"/>
+                </xpath>
                 <xpath expr="//field[@name='res_model_id']" position="after">
                     <field name="model" invisible="1"/>
+                    <field name="type_of_matrix" widget="selection"/>
                     <field name="escalation_matrix_id" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
                     <field name="is_erp_activity" attrs="{'invisible': [('model', '!=', 'crm.lead')]}"/>
                     <field name="next_sequence" />
@@ -33,16 +40,16 @@
 
         <!-- customised form view of crm.lead definition -->
 
-        <record model="ir.ui.view" id="lead_score_form">
-            <field name="name">erp.crm.lead.form.inherit</field>
-            <field name="model">crm.lead</field>
-            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='team_id']" position="after">
-                    <field name="type_of_matrix" invisible="1"/>
-                </xpath>
-            </field>
-        </record>
+<!--        <record model="ir.ui.view" id="lead_score_form">-->
+<!--            <field name="name">erp.crm.lead.form.inherit</field>-->
+<!--            <field name="model">crm.lead</field>-->
+<!--            <field name="inherit_id" ref="crm.crm_lead_view_form"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                <xpath expr="//field[@name='team_id']" position="after">-->
+<!--                    <field name="type_of_matrix" invisible="1"/>-->
+<!--                </xpath>-->
+<!--            </field>-->
+<!--        </record>-->
 
         <!-- explicit form view definition -->
 
@@ -62,7 +69,8 @@
                                 <field name="manager_id"/>
                             </group>
                             <group>
-                                <field name="type_of_matrix" required="1"/>
+                                <field name="type_of_matrix" required="1" />
+                                <field name="assignment_reminder" />
                             </group>
                             <div>
                                 <b> Highest Hierarchy order will inform first, then again second-highest with highest, and so on. </b>
@@ -73,6 +81,7 @@
                                     <field name="salesperson_id"/>
                                     <field name="salesperson_manager"/>
                                     <field name="work_email"/>
+                                    <field name="reminder_time"/>
                                     <field name="serial_no"/>
                                 </tree>
                                 <form>
@@ -99,8 +108,10 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="escalation_matrix_number"/>
+                    <field name="name"/>
                     <field name="manager_id"/>
                     <field name="type_of_matrix"/>
+                    <field name="assignment_reminder" />
                 </tree>
             </field>
         </record>

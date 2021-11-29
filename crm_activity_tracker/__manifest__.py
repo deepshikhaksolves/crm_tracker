@@ -23,9 +23,11 @@
         'security/ir_group.xml',
         'views/crm_activity_summary.xml',
         'views/crm_escalation_matrix.xml',
+        'views/crm_timing.xml',
         'data/ir_sequence.xml',
         'data/ir_cron_job.xml',
         'data/crm_mail_format.xml',
+        'data/office_timing_data.xml',
     ],
     'post_init_hook': 'post_install_hook',
 }
