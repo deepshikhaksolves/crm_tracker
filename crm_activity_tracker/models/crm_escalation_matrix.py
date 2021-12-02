@@ -172,7 +172,7 @@ class ErpEscalationCrm(models.Model):
 class ErpScheduleActivity(models.Model):
     _inherit = 'mail.activity'
 
-    # date_deadline = fields.Datetime('Due Date', index=True, required=True, default=fields.Datetime.now())
+    date_deadline = fields.Datetime('Due Date', index=True, required=True, default=fields.Datetime.now())
     next_activity_sequence = fields.Integer('Next Activity Sequence')
     mail_reminder_hour = fields.Integer('Mail Reminder Hour', default=1)
     is_erp_activity = fields.Boolean('Erp Activity')
@@ -190,8 +190,8 @@ class ErpScheduleActivity(models.Model):
         if activity_type.delay_from == 'previous_activity' and 'activity_previous_deadline' in self.env.context:
             base = fields.Date.from_string(self.env.context.get('activity_previous_deadline'))
         base += relativedelta(**{activity_type.delay_unit: activity_type.delay_count})
-        # return datetime.strftime(base, "%Y-%m-%d %H:%M:%S")
-        return datetime.strftime(base, "%Y-%m-%d")
+        return datetime.strftime(base, "%Y-%m-%d %H:%M:%S")
+        # return datetime.strftime(base, "%Y-%m-%d")
 
     @api.onchange('mail_reminder_day', 'date_deadline')
     def compute_next_mail_due_date(self):
@@ -352,34 +352,34 @@ class ErpScheduleActivity(models.Model):
                         if not rec.is_mail_triggered:
                             rec.is_mail_triggered = True
 
-    # @api.model
-    # def create(self, values):
-    #     activity = super(models.Model, self).create(values)
-    #     need_sudo = False
-    #     try:  # in multicompany, reading the partner might break
-    #         partner_id = activity.user_id.partner_id.id
-    #     except exceptions.AccessError:
-    #         need_sudo = True
-    #         partner_id = activity.user_id.sudo().partner_id.id
-    #
-    #     # send a notification to assigned user; in case of manually done activity also check
-    #     # target has rights on document otherwise we prevent its creation. Automated activities
-    #     # are checked since they are integrated into business flows that should not crash.
-    #     if activity.user_id != self.env.user:
-    #         if not activity.automated:
-    #             activity._check_access_assignation()
-    #         if not self.env.context.get('mail_activity_quick_update', False):
-    #             if need_sudo:
-    #                 activity.sudo().action_notify()
-    #             else:
-    #                 activity.action_notify()
-    #
-    #     self.env[activity.res_model].browse(activity.res_id).message_subscribe(partner_ids=[partner_id])
-    #     if activity.date_deadline.date() <= datetime.now().date():
-    #         self.env['bus.bus'].sendone(
-    #             (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
-    #             {'type': 'activity_updated', 'activity_created': True})
-    #     return activity
+    @api.model
+    def create(self, values):
+        activity = super(models.Model, self).create(values)
+        need_sudo = False
+        try:  # in multicompany, reading the partner might break
+            partner_id = activity.user_id.partner_id.id
+        except exceptions.AccessError:
+            need_sudo = True
+            partner_id = activity.user_id.sudo().partner_id.id
+
+        # send a notification to assigned user; in case of manually done activity also check
+        # target has rights on document otherwise we prevent its creation. Automated activities
+        # are checked since they are integrated into business flows that should not crash.
+        if activity.user_id != self.env.user:
+            if not activity.automated:
+                activity._check_access_assignation()
+            if not self.env.context.get('mail_activity_quick_update', False):
+                if need_sudo:
+                    activity.sudo().action_notify()
+                else:
+                    activity.action_notify()
+
+        self.env[activity.res_model].browse(activity.res_id).message_subscribe(partner_ids=[partner_id])
+        if activity.date_deadline.date() <= datetime.now().date():
+            self.env['bus.bus'].sendone(
+                (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
+                {'type': 'activity_updated', 'activity_created': True})
+        return activity
 
 
 class ErpActivityType(models.Model):
