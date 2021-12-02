@@ -18,7 +18,7 @@ class CrmLeadInherit(models.Model):
                                                                       ('escalation_matrix_id', '=', False),
                                                                       ('type_of_matrix', '=', False)], limit=1)
             date_deadline = self.env['mail.activity']._calculate_date_deadline(activity_type_id)
-            date_deadline = datetime.strptime(date_deadline, '%Y-%m-%d %H:%M:%S')
+            # date_deadline = datetime.strptime(date_deadline, '%Y-%m-%d %H:%M:%S')
             activity_id = self.env['mail.activity'].create({
                 'res_model': 'crm.lead',
                 'res_id': res.id,
@@ -52,8 +52,9 @@ class CrmLeadInherit(models.Model):
             logout_utc = local_logout.astimezone(pytz.utc).replace(tzinfo=None)
             if now_time < login_utc:
                 diff = login_utc - now_time
-                activity_id.date_deadline = activity_id.date_deadline + timedelta(seconds=diff.seconds)
+                activity_id.date_deadline = (activity_id.date_deadline + timedelta(seconds=diff.seconds)).date
             elif now_time > logout_utc - timedelta(hours=1):
                 base = (now_time + timedelta(days=1)).replace(hour=login_utc.hour, minute=login_utc.minute)
                 base += relativedelta(**{activity_type_id.delay_unit: activity_type_id.delay_count})
-                activity_id.date_deadline = datetime.strftime(base, "%Y-%m-%d %H:%M:%S")
+                # activity_id.date_deadline = (datetime.strftime(base, "%Y-%m-%d %H:%M:%S"))
+                activity_id.date_deadline = (datetime.strftime(base, "%Y-%m-%d"))

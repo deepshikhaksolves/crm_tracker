@@ -172,11 +172,11 @@ class ErpEscalationCrm(models.Model):
 class ErpScheduleActivity(models.Model):
     _inherit = 'mail.activity'
 
-    date_deadline = fields.Datetime('Due Date', index=True, required=True, default=fields.Datetime.now())
+    # date_deadline = fields.Datetime('Due Date', index=True, required=True, default=fields.Datetime.now())
     next_activity_sequence = fields.Integer('Next Activity Sequence')
     mail_reminder_hour = fields.Integer('Mail Reminder Hour', default=1)
     is_erp_activity = fields.Boolean('Erp Activity')
-    next_mail_due_date = fields.Datetime(
+    next_mail_due_date = fields.Date(
         string='Next mail Remainder Date', compute='compute_next_mail_due_date')
     is_crm_lead = fields.Boolean("Is Crm Lead")
     is_mail_triggered = fields.Boolean("Mail Triggered")
@@ -190,7 +190,8 @@ class ErpScheduleActivity(models.Model):
         if activity_type.delay_from == 'previous_activity' and 'activity_previous_deadline' in self.env.context:
             base = fields.Date.from_string(self.env.context.get('activity_previous_deadline'))
         base += relativedelta(**{activity_type.delay_unit: activity_type.delay_count})
-        return datetime.strftime(base, "%Y-%m-%d %H:%M:%S")
+        # return datetime.strftime(base, "%Y-%m-%d %H:%M:%S")
+        return datetime.strftime(base, "%Y-%m-%d")
 
     @api.onchange('mail_reminder_day', 'date_deadline')
     def compute_next_mail_due_date(self):
@@ -198,7 +199,7 @@ class ErpScheduleActivity(models.Model):
             if rec.res_model == 'crm.lead' and rec.date_deadline:
                 rec.is_crm_lead = True
                 rec.next_mail_due_date = rec.date_deadline + \
-                                         relativedelta(hours=rec.mail_reminder_hour)
+                                         relativedelta(days=rec.mail_reminder_hour)
 
     # def _action_done(self, feedback=False, attachment_ids=None):
     #     if self.res_model == 'crm.lead':
@@ -254,56 +255,57 @@ class ErpScheduleActivity(models.Model):
             user_id = None
             utc_now = datetime.utcnow().replace(second=00, microsecond=00)
             for rec in activities:
-                if rec.next_mail_due_date.date() == datetime.today().date() and rec.next_mail_due_date < datetime.utcnow():
-                    if rec.is_lead_assignment:
-                        values = crm_mail_template_id.generate_email(rec.id,
-                                                                     ['subject', 'body_html', 'email_from', 'email_to',
-                                                                      'partner_to', 'email_cc', 'reply_to',
-                                                                      'scheduled_date'])
-                        crm_obj = rec.env['crm.lead'].browse(rec.res_id)
-                        escalation_matrix_ids = self.env['erp.escalation.matrix'].search(
-                            [('assignment_reminder', '=', True)])
-                        for escalation_matrix in escalation_matrix_ids:
-                            if escalation_matrix:
-                                if not rec.is_mail_triggered:
-                                    salespersons_ids = escalation_matrix.managers_ids.sorted(
-                                        'serial_no', reverse=True)
-                                    if salespersons_ids:
-                                        user_id = salespersons_ids[0].salesperson_id
-                                        values['email_to'] = user_id.work_email
-                                        if len(salespersons_ids) > 1:
-                                            rec.next_mail_manager_sequence = salespersons_ids[1].serial_no
-                                            rec.mail_reminder_hour = salespersons_ids[1].reminder_time
-                                    else:
-                                        _logger.error(
-                                            "No Salesperson is defined in escalation matrix" + str(
-                                                crm_obj.type_of_matrix))
-                                else:
-                                    manager_ids = escalation_matrix.managers_ids.filtered(
-                                        lambda manager_id: manager_id.serial_no >= rec.next_mail_manager_sequence)
-                                    if manager_ids:
-                                        emails = set(
-                                            manger_id.work_email for manger_id in manager_ids)
-                                        values['email_to'] = ','.join(emails)
-                                        next_sequence_manager_ids = escalation_matrix.managers_ids.filtered(
-                                            lambda manager_id: manager_id.serial_no < rec.next_mail_manager_sequence)
-                                        sorted_manager = next_sequence_manager_ids.sorted(
-                                            'serial_no', reverse=True)
-                                        if sorted_manager:
-                                            rec.next_mail_manager_sequence = sorted_manager[0].serial_no
-                                            rec.mail_reminder_hour = sorted_manager[0].reminder_time
-
-                            else:
-                                _logger.error(
-                                    "No escalation matrix is defined for " + str(crm_obj.type_of_matrix))
-
-                            values['email_from'] = "odoobot@example.com"
-                            values['body_html'] = values['body_html']
-                            mail = self.env['mail.mail'].create(values)
-                            mail.send()
-                            if not rec.is_mail_triggered:
-                                rec.is_mail_triggered = True
-                    else:
+                if rec.next_mail_due_date == datetime.today():
+            #     if rec.next_mail_due_date.date() == datetime.today().date() and rec.next_mail_due_date < datetime.utcnow():
+            #         if rec.is_lead_assignment:
+            #             values = crm_mail_template_id.generate_email(rec.id,
+            #                                                          ['subject', 'body_html', 'email_from', 'email_to',
+            #                                                           'partner_to', 'email_cc', 'reply_to',
+            #                                                           'scheduled_date'])
+            #             crm_obj = rec.env['crm.lead'].browse(rec.res_id)
+            #             escalation_matrix_ids = self.env['erp.escalation.matrix'].search(
+            #                 [('assignment_reminder', '=', True)])
+            #             for escalation_matrix in escalation_matrix_ids:
+            #                 if escalation_matrix:
+            #                     if not rec.is_mail_triggered:
+            #                         salespersons_ids = escalation_matrix.managers_ids.sorted(
+            #                             'serial_no', reverse=True)
+            #                         if salespersons_ids:
+            #                             user_id = salespersons_ids[0].salesperson_id
+            #                             values['email_to'] = user_id.work_email
+            #                             if len(salespersons_ids) > 1:
+            #                                 rec.next_mail_manager_sequence = salespersons_ids[1].serial_no
+            #                                 rec.mail_reminder_hour = salespersons_ids[1].reminder_time
+            #                         else:
+            #                             _logger.error(
+            #                                 "No Salesperson is defined in escalation matrix" + str(
+            #                                     crm_obj.type_of_matrix))
+            #                     else:
+            #                         manager_ids = escalation_matrix.managers_ids.filtered(
+            #                             lambda manager_id: manager_id.serial_no >= rec.next_mail_manager_sequence)
+            #                         if manager_ids:
+            #                             emails = set(
+            #                                 manger_id.work_email for manger_id in manager_ids)
+            #                             values['email_to'] = ','.join(emails)
+            #                             next_sequence_manager_ids = escalation_matrix.managers_ids.filtered(
+            #                                 lambda manager_id: manager_id.serial_no < rec.next_mail_manager_sequence)
+            #                             sorted_manager = next_sequence_manager_ids.sorted(
+            #                                 'serial_no', reverse=True)
+            #                             if sorted_manager:
+            #                                 rec.next_mail_manager_sequence = sorted_manager[0].serial_no
+            #                                 rec.mail_reminder_hour = sorted_manager[0].reminder_time
+            #
+            #                 else:
+            #                     _logger.error(
+            #                         "No escalation matrix is defined for " + str(crm_obj.type_of_matrix))
+            #
+            #                 values['email_from'] = "odoobot@example.com"
+            #                 values['body_html'] = values['body_html']
+            #                 mail = self.env['mail.mail'].create(values)
+            #                 mail.send()
+            #                 if not rec.is_mail_triggered:
+            #                     rec.is_mail_triggered = True
+            #         else:
                         values = crm_mail_template_id.generate_email(rec.id,
                                                                      ['subject', 'body_html', 'email_from', 'email_to',
                                                                       'partner_to', 'email_cc', 'reply_to',
@@ -350,34 +352,34 @@ class ErpScheduleActivity(models.Model):
                         if not rec.is_mail_triggered:
                             rec.is_mail_triggered = True
 
-    @api.model
-    def create(self, values):
-        activity = super(models.Model, self).create(values)
-        need_sudo = False
-        try:  # in multicompany, reading the partner might break
-            partner_id = activity.user_id.partner_id.id
-        except exceptions.AccessError:
-            need_sudo = True
-            partner_id = activity.user_id.sudo().partner_id.id
-
-        # send a notification to assigned user; in case of manually done activity also check
-        # target has rights on document otherwise we prevent its creation. Automated activities
-        # are checked since they are integrated into business flows that should not crash.
-        if activity.user_id != self.env.user:
-            if not activity.automated:
-                activity._check_access_assignation()
-            if not self.env.context.get('mail_activity_quick_update', False):
-                if need_sudo:
-                    activity.sudo().action_notify()
-                else:
-                    activity.action_notify()
-
-        self.env[activity.res_model].browse(activity.res_id).message_subscribe(partner_ids=[partner_id])
-        if activity.date_deadline.date() <= datetime.now().date():
-            self.env['bus.bus'].sendone(
-                (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
-                {'type': 'activity_updated', 'activity_created': True})
-        return activity
+    # @api.model
+    # def create(self, values):
+    #     activity = super(models.Model, self).create(values)
+    #     need_sudo = False
+    #     try:  # in multicompany, reading the partner might break
+    #         partner_id = activity.user_id.partner_id.id
+    #     except exceptions.AccessError:
+    #         need_sudo = True
+    #         partner_id = activity.user_id.sudo().partner_id.id
+    #
+    #     # send a notification to assigned user; in case of manually done activity also check
+    #     # target has rights on document otherwise we prevent its creation. Automated activities
+    #     # are checked since they are integrated into business flows that should not crash.
+    #     if activity.user_id != self.env.user:
+    #         if not activity.automated:
+    #             activity._check_access_assignation()
+    #         if not self.env.context.get('mail_activity_quick_update', False):
+    #             if need_sudo:
+    #                 activity.sudo().action_notify()
+    #             else:
+    #                 activity.action_notify()
+    #
+    #     self.env[activity.res_model].browse(activity.res_id).message_subscribe(partner_ids=[partner_id])
+    #     if activity.date_deadline.date() <= datetime.now().date():
+    #         self.env['bus.bus'].sendone(
+    #             (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
+    #             {'type': 'activity_updated', 'activity_created': True})
+    #     return activity
 
 
 class ErpActivityType(models.Model):
