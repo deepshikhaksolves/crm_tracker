@@ -199,7 +199,10 @@ class ErpScheduleActivity(models.Model):
             if rec.res_model == 'crm.lead' and rec.date_deadline:
                 rec.is_crm_lead = True
                 rec.next_mail_due_date = rec.date_deadline + \
-                                         relativedelta(days=rec.mail_reminder_hour)
+                                         relativedelta(hours=rec.mail_reminder_hour)
+            else:
+                rec.next_mail_due_date = rec.date_deadline + \
+                                         relativedelta(hours=24)
 
     # def _action_done(self, feedback=False, attachment_ids=None):
     #     if self.res_model == 'crm.lead':
@@ -382,13 +385,10 @@ class ErpScheduleActivity(models.Model):
         return activity
 
     def write(self, values):
-        """Overridden write function to change
-        activity.date_deadline <= fields.Date.today() condition."""
         if values.get('user_id'):
             user_changes = self.filtered(lambda activity: activity.user_id.id != values.get('user_id'))
             pre_responsibles = user_changes.mapped('user_id.partner_id')
-        res = super(ErpScheduleActivity, self).write(values)
-
+        res = super(models.Model, self).write(values)
         if values.get('user_id'):
             if values['user_id'] != self.env.uid:
                 to_check = user_changes.filtered(lambda act: not act.automated)
@@ -397,12 +397,12 @@ class ErpScheduleActivity(models.Model):
                     user_changes.action_notify()
             for activity in user_changes:
                 self.env[activity.res_model].browse(activity.res_id).message_subscribe(partner_ids=[activity.user_id.partner_id.id])
-                if activity.date_deadline <= datetime.utcnow().date():
+                if activity.date_deadline.date() <= datetime.utcnow().date():
                     self.env['bus.bus'].sendone(
                         (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
                         {'type': 'activity_updated', 'activity_created': True})
             for activity in user_changes:
-                if activity.date_deadline <= datetime.utcnow().date():
+                if activity.date_deadline.date() <= datetime.utcnow().date():
                     for partner in pre_responsibles:
                         self.env['bus.bus'].sendone(
                             (self._cr.dbname, 'res.partner', partner.id),
@@ -410,15 +410,12 @@ class ErpScheduleActivity(models.Model):
         return res
 
     def unlink(self):
-        """Overridden unlink function to change
-        activity.date_deadline <= fields.Date.today() condition."""
         for activity in self:
-            if activity.date_deadline <= datetime.utcnow().date():
+            if activity.date_deadline.date() <= datetime.utcnow().date():
                 self.env['bus.bus'].sendone(
                     (self._cr.dbname, 'res.partner', activity.user_id.partner_id.id),
                     {'type': 'activity_updated', 'activity_deleted': True})
-        return super(ErpScheduleActivity, self).unlink()
-
+        return super(models.Model, self).unlink()
 
 class ErpActivityType(models.Model):
     _inherit = 'mail.activity.type'
